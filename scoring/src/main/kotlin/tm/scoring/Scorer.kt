@@ -34,4 +34,13 @@ object Scorer {
             )
         }
     }
+
+    /**
+     * As [score], but reports a zero breakdown for every player in [players] so
+     * the score screen can show a complete table.
+     */
+    fun scoreAll(board: Board, grid: Grid, players: Set<PlayerColor>): Map<PlayerColor, ScoreBreakdown> {
+        val scored = score(board, grid)
+        return players.associateWith { scored[it] ?: ScoreBreakdown(0, 0) }
+    }
 }
