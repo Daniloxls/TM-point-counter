@@ -42,7 +42,7 @@ dependencies {
     implementation(project(":scoring"))
     implementation(project(":vision"))
 
-    implementation(libs.material)
+    implementation(libs.google.material)
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
