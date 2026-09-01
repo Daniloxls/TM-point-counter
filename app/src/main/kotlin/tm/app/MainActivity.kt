@@ -31,7 +31,10 @@ class MainActivity : ComponentActivity() {
                     var state by remember { mutableStateOf(AppState()) }
                     when (state.step) {
                         Step.PICK_BOARD -> BoardPicker(onBoardChosen = { state = state.withBoard(it) })
-                        Step.CAPTURE -> Text("Capture — Task 7")
+                        Step.CAPTURE -> CaptureScreen(
+                            onCaptured = { state = state.withPhoto(it) },
+                            onBack = { state = state.back() },
+                        )
                         Step.ANCHORS -> Text("Anchors — Task 8")
                         Step.REVIEW -> Text("Review — Task 9")
                         Step.SCORE -> Text("Score — Task 10")
