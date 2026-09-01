@@ -52,7 +52,7 @@ and it means the model can be trained largely on synthetic data.
    corner detection is a later optimisation, not a prerequisite.
 3. **Warp.** OpenCV `getPerspectiveTransform` plus `warpPerspective` produce a
    canonical top-down image at a fixed resolution.
-4. **Crop.** Hex centres come from the board definition file. Each crop is a
+4. **Crop.** Hex centres come from the shared board geometry. Each crop is a
    square region around the centre, resized to 64x64.
 5. **Classify.** A TFLite model labels each crop as one of
    `empty | ocean | greenery | city | special` and returns a confidence.
