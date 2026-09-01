@@ -35,7 +35,11 @@ class MainActivity : ComponentActivity() {
                             onCaptured = { state = state.withPhoto(it) },
                             onBack = { state = state.back() },
                         )
-                        Step.ANCHORS -> Text("Anchors — Task 8")
+                        Step.ANCHORS -> AnchorScreen(
+                            photoPath = state.photoPath.orEmpty(),
+                            onPlaced = { state = state.withAnchors(it) },
+                            onBack = { state = state.back() },
+                        )
                         Step.REVIEW -> Text("Review — Task 9")
                         Step.SCORE -> Text("Score — Task 10")
                     }
