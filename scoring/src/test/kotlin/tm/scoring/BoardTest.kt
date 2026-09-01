@@ -1,7 +1,6 @@
 package tm.scoring
 
 import kotlin.test.Test
-import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.test.assertFailsWith
@@ -18,11 +17,6 @@ class BoardTest {
         for (board in Board.ALL) assertEquals(61, board.hexes.size, "${board.id} has the wrong hex count")
     }
 
-    // The three ocean sets await transcription from the physical boards: lay each
-    // printed map out with the 9-hex row across the middle, number rows 1-9 top to
-    // bottom and columns 1-N left to right within each row, and record every space
-    // printed with the blue ocean symbol as r<row>c<col>. Each board has exactly 12.
-    @Ignore
     @Test
     fun `every board has exactly 12 ocean-reserved hexes`() {
         for (board in Board.ALL) {

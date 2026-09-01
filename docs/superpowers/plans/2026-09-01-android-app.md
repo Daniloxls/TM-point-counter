@@ -18,7 +18,7 @@ Three, all deliberate. Task 9 folds them back into the spec.
 
 1. **No OpenCV.** The spec names `getPerspectiveTransform` and `warpPerspective`. `android.graphics.Matrix.setPolyToPoly` performs exactly the same 4-point perspective mapping, and `Canvas.drawBitmap(bitmap, matrix, paint)` applies it. OpenCV's Android distribution is roughly 100MB of native libraries for one function the platform already ships.
 2. **Corner anchors are hex centres, not map corners.** The spec has the user dragging four handles onto "the corners of the printed map area". A Terraforming Mars board is a printed sheet with the hex field inside it and no crisp corner to aim at, so that instruction is ambiguous to within a centimetre. Instead the user drags four handles onto the centres of the four corner hexes — `r1c1`, `r1c5`, `r9c1`, `r9c5` — which are visually unambiguous. In board space those four centres form an exact rectangle (verified below), so they anchor a perspective transform cleanly.
-3. **Ocean-reserved hints are inert.** `Board.oceanReserved` is still empty pending transcription from the physical boards, so the spec's "greenery on an ocean-reserved hex is flagged" behaviour is implemented but never fires. The code path is built and tested against a board with a stubbed ocean set, so it starts working the moment the real data lands.
+3. ~~**Ocean-reserved hints are inert.**~~ No longer a deviation: the three boards' ocean sets have since been transcribed and `Board.oceanReserved` is populated, twelve per board. The spec's "greenery on an ocean-reserved hex is flagged" behaviour works as designed, and Task 9's warning fires for real.
 
 ## Global Constraints
 
@@ -1951,7 +1951,7 @@ private fun TileEditor(
 }
 ```
 
-The ocean-reserved warning is written now and fires never, because those sets are still empty — it starts working the day the transcription lands, with no code change.
+The ocean-reserved warning fires for real: the three boards' ocean sets are transcribed and populated, twelve per board.
 
 - [ ] **Step 4: Wire it into the router**
 
@@ -2164,4 +2164,3 @@ git commit -m "docs: align spec with the Android app as built"
 - Automatic corner detection. The user places four anchors; the spec keeps this as an open question.
 - Automatic board identification — the user picks the board.
 - Saving or resuming a session, exporting a score, or scoring history. Nothing in the spec asks for them.
-- The ocean-reserved data itself, which still awaits transcription from three physical boards.

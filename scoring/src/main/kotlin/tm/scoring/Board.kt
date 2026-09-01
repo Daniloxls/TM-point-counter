@@ -19,9 +19,41 @@ class Board(
         (hexes[hexId] ?: throw IllegalArgumentException("$id has no hex $hexId")).neighbors
 
     companion object {
-        val THARSIS = Board("tharsis", emptySet())
-        val HELLAS = Board("hellas", emptySet())
-        val ELYSIUM = Board("elysium", emptySet())
+        val THARSIS = Board(
+            "tharsis",
+            setOf(
+                "r1c2", "r1c4", "r1c5",
+                "r2c6",
+                "r4c8",
+                "r5c4", "r5c5", "r5c6",
+                "r6c6", "r6c7", "r6c8",
+                "r9c5",
+            ),
+        )
+
+        val HELLAS = Board(
+            "hellas",
+            setOf(
+                "r1c1",
+                "r2c1",
+                "r3c1",
+                "r4c1", "r4c6", "r4c7",
+                "r5c6", "r5c7", "r5c8",
+                "r6c6", "r6c7",
+                "r7c1",
+            ),
+        )
+
+        val ELYSIUM = Board(
+            "elysium",
+            setOf(
+                "r1c1", "r1c2", "r1c3", "r1c4",
+                "r2c4", "r2c5",
+                "r3c5", "r3c6",
+                "r4c4", "r4c6", "r4c7",
+                "r5c4",
+            ),
+        )
 
         val ALL = listOf(THARSIS, HELLAS, ELYSIUM)
 

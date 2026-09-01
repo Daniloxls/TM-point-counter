@@ -167,10 +167,11 @@ photos exist, and real photos are only needed for the final fine-tune.
 - Is automatic corner detection worth adding after version one, or does the
   drag turn out to be fast enough to keep permanently?
 
-## Outstanding data
+## Board data
 
-The three boards' ocean-reserved hex sets are not yet filled in. Transcribing
-them means reading the physical printed boards by hand, which is deferred
-work rather than a design gap. No scoring rule depends on them, since oceans
-score nothing either way. Until they are filled in, the ocean hint on the
-review screen has nothing to show.
+The three boards' ocean-reserved hex sets were transcribed from the physical
+printed boards and are held in `Board.kt`. Each board has twelve, which a test
+asserts, alongside a test that every id is a real hex. No scoring rule depends
+on them, since oceans score nothing either way; they drive the review screen's
+ocean hint and the warning when a greenery is placed on a space printed as
+ocean.
