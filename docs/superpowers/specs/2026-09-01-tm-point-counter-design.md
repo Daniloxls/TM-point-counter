@@ -52,7 +52,7 @@ and it means the model can be trained largely on synthetic data.
    corner detection is a later optimisation, not a prerequisite.
 3. **Warp.** OpenCV `getPerspectiveTransform` plus `warpPerspective` produce a
    canonical top-down image at a fixed resolution.
-4. **Crop.** Hex centres come from the board definition file. Each crop is a
+4. **Crop.** Hex centres come from the shared board geometry. Each crop is a
    square region around the centre, resized to 64x64.
 5. **Classify.** A TFLite model labels each crop as one of
    `empty | ocean | greenery | city | special` and returns a confidence.
@@ -76,10 +76,10 @@ and it means the model can be trained largely on synthetic data.
 :vision     Warp, crop, TFLite inference, HSV colour reading.
             Input: bitmap + four corners + board id.
             Output: List<HexRead(hexId, type, owner, confidence)>.
-:scoring    Pure Kotlin, no Android dependencies. Hex graph plus the VP
-            rules. Input: confirmed grid. Output: per-player breakdown.
-:boards     JSON per board: hex ids, normalised centre coordinates,
-            neighbour lists, and which hexes are ocean-reserved.
+:scoring    Pure Kotlin, no Android dependencies, no third-party
+            dependencies. Computes the shared hex geometry, holds
+            per-board ocean-reserved hex ids, and applies the VP rules.
+            Input: confirmed grid. Output: per-player breakdown.
 tools/      Python. Synthetic data generation, training, TFLite export.
 ```
 
@@ -90,23 +90,24 @@ it is the part that is trivially testable once it has no Android dependencies.
 
 ## Board definition format
 
-One JSON file per board:
+All three boards share one geometry, so it is computed rather than
+hand-maintained as data: a radius-4 hexagon in axial coordinates, giving rows
+of 5-6-7-8-9-8-7-6-5 for 61 hexes. Hex ids have the form `r<row>c<col>`, rows
+1-9 top to bottom and columns 1-N left to right within a row. For each hex the
+geometry gives its axial coordinates, its neighbour list, and the centre of
+the hex, each axis normalised to 0.0..1.0 against the bounding box of hex
+centres, not the board outline: 0.0 and 1.0 are the centres of the border
+hexes on that axis, half a hex short of the warped canonical board image's
+edges. Because each axis is normalised independently, the width-to-height
+ratio of the centre bounding box is published alongside the geometry so a
+consumer — `:vision`, in particular — can restore true proportions before
+doing distance maths. The half-width and half-height of a hex, in the same
+normalised units, are published too, so `:vision` can size a crop that
+reaches the true board edge at every border hex instead of stopping at the
+centre bounding box.
 
-```json
-{
-  "id": "tharsis",
-  "hexes": [
-    { "id": "1", "x": 0.412, "y": 0.083, "neighbors": ["2", "7", "8"],
-      "oceanReserved": true }
-  ]
-}
-```
-
-Coordinates are normalised to the warped canonical image, so they are
-resolution-independent. Neighbour lists are precomputed rather than derived at
-runtime; the geometry is static and a wrong neighbour is easier to spot in data
-than in code. `oceanReserved` marks the hexes printed with the ocean symbol,
-which the review screen uses as a hint and the app uses as a sanity check.
+Per-board data reduces to the set of ocean-reserved hex ids, which the review
+screen uses as a hint and the app uses as a sanity check.
 
 ## Model and training data
 
@@ -149,10 +150,10 @@ photos exist, and real photos are only needed for the final fine-tune.
 - `:scoring` — unit tests over hand-built grids: a lone greenery, a city with
   no adjacent greenery, a city adjacent to three greeneries owned by three
   different players, adjacency at the board edge, an empty board. These are
-  the tests that must never be allowed to fail.
-- `:boards` — a data test per board asserting 61 hexes, symmetric neighbour
-  relations, no hex claiming itself as a neighbour, and centre coordinates
-  inside the unit square.
+  the tests that must never be allowed to fail. Also a geometry test asserting
+  61 hexes, symmetric neighbour relations, no hex claiming itself as a
+  neighbour, and centre coordinates inside the unit square, plus a data test
+  per board asserting its ocean-reserved ids are real hexes.
 - `:vision` — fixture test over a handful of stored photos with known correct
   grids, asserting an accuracy floor rather than an exact match.
 - Model — a held-out set of real photo crops, reported as a confusion matrix.
@@ -165,3 +166,12 @@ photos exist, and real photos are only needed for the final fine-tune.
   misread in practice.
 - Is automatic corner detection worth adding after version one, or does the
   drag turn out to be fast enough to keep permanently?
+
+## Board data
+
+The three boards' ocean-reserved hex sets were transcribed from the physical
+printed boards and are held in `Board.kt`. Each board has twelve, which a test
+asserts, alongside a test that every id is a real hex. No scoring rule depends
+on them, since oceans score nothing either way; they drive the review screen's
+ocean hint and the warning when a greenery is placed on a space printed as
+ocean.
