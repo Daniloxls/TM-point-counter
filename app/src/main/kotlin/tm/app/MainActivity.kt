@@ -13,6 +13,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -24,7 +28,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    BoardPicker(onBoardChosen = { })
+                    var state by remember { mutableStateOf(AppState()) }
+                    when (state.step) {
+                        Step.PICK_BOARD -> BoardPicker(onBoardChosen = { state = state.withBoard(it) })
+                        Step.CAPTURE -> Text("Capture — Task 7")
+                        Step.ANCHORS -> Text("Anchors — Task 8")
+                        Step.REVIEW -> Text("Review — Task 9")
+                        Step.SCORE -> Text("Score — Task 10")
+                    }
                 }
             }
         }
