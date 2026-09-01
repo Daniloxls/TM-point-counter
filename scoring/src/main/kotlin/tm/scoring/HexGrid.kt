@@ -15,13 +15,34 @@ object HexGrid {
 
     private val DIRECTIONS = listOf(1 to 0, 1 to -1, 0 to -1, -1 to 0, -1 to 1, 0 to 1)
 
-    /** Width divided by height of the bounding box of all hex centres. */
-    val ASPECT_RATIO: Double = run {
+    /** (width, height) of the bounding box of all hex centres, in [pixel] units. */
+    private val centreBoundsSize: Pair<Double, Double> = run {
         val points = coords().map { (q, r) -> pixel(q, r) }
         val width = points.maxOf { it.first } - points.minOf { it.first }
         val height = points.maxOf { it.second } - points.minOf { it.second }
-        width / height
+        width to height
     }
+
+    /** Width divided by height of the bounding box of all hex centres. */
+    val ASPECT_RATIO: Double = centreBoundsSize.first / centreBoundsSize.second
+
+    /**
+     * Half the width of one hex, in the same 0.0..1.0 units as [Hex.x] (before
+     * the [ASPECT_RATIO] correction). A hex's horizontal extent runs from
+     * `x - HEX_HALF_WIDTH` to `x + HEX_HALF_WIDTH`. A crop taken only between
+     * 0.0 and 1.0 clips every hex on the left/right board edge by this much,
+     * since [Hex.x] is normalised to the bounding box of hex *centres*, not
+     * the board outline.
+     */
+    val HEX_HALF_WIDTH: Double = (kotlin.math.sqrt(3.0) / 2) / centreBoundsSize.first
+
+    /**
+     * Half the height of one hex, in the same 0.0..1.0 units as [Hex.y]. A
+     * hex's vertical extent runs from `y - HEX_HALF_HEIGHT` to
+     * `y + HEX_HALF_HEIGHT`; see [HEX_HALF_WIDTH] for why this matters for
+     * cropping.
+     */
+    val HEX_HALF_HEIGHT: Double = 1.0 / centreBoundsSize.second
 
     private val hexCache: Map<String, Hex> = buildHexes()
 
@@ -51,7 +72,11 @@ object HexGrid {
             .filter { (nq, nr) -> isOnBoard(nq, nr) }
             .map { (nq, nr) -> idOf(nq, nr) }
 
-    /** Pointy-top hex layout in arbitrary units; only ratios matter. */
+    /**
+     * Pointy-top hex layout in arbitrary units; only ratios matter. Unit hex
+     * size 1, so a hex spans `sqrt(3)/2` either side of centre horizontally
+     * and `1.0` either side vertically ([HEX_HALF_WIDTH], [HEX_HALF_HEIGHT]).
+     */
     private fun pixel(q: Int, r: Int): Pair<Double, Double> =
         Pair(kotlin.math.sqrt(3.0) * (q + r / 2.0), 1.5 * r)
 

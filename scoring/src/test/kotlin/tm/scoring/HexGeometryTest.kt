@@ -58,8 +58,39 @@ class HexGeometryTest {
             }
         }
         val first = spacings.first()
+        assertTrue(first > 1e-3, "spacing $first is suspiciously close to zero (collapsed grid?)")
         for (spacing in spacings) {
             assertTrue(abs(spacing - first) < 1e-6, "spacing $spacing differs from $first")
         }
+    }
+
+    @Test
+    fun `r5c5 has the expected six neighbours`() {
+        assertEquals(setOf("r4c4", "r4c5", "r5c4", "r5c6", "r6c4", "r6c5"), Board.THARSIS.neighbors("r5c5").toSet())
+    }
+
+    @Test
+    fun `hex half-extents pad a border hex's crop box past the centre bounding box`() {
+        // r5c1 is the leftmost hex in the middle row: its centre sits at x=0.0,
+        // half a hex short of the true left edge of the board image.
+        val leftBorder = hexes.getValue("r5c1")
+        assertEquals(0.0, leftBorder.x, 1e-9)
+        assertTrue(leftBorder.x - HexGrid.HEX_HALF_WIDTH < 0.0, "crop should extend past the left edge")
+
+        // r1c1 is in the top row: its centre sits at y=0.0, half a hex short of
+        // the true top edge of the board image.
+        val topBorder = hexes.getValue("r1c1")
+        assertEquals(0.0, topBorder.y, 1e-9)
+        assertTrue(topBorder.y - HexGrid.HEX_HALF_HEIGHT < 0.0, "crop should extend past the top edge")
+
+        // Adjacent hex centres in the same row are exactly one hex-width apart,
+        // so their half-width crop boxes tile without gaps or overlap.
+        val r5c1 = hexes.getValue("r5c1")
+        val r5c2 = hexes.getValue("r5c2")
+        assertEquals(
+            r5c2.x - HexGrid.HEX_HALF_WIDTH,
+            r5c1.x + HexGrid.HEX_HALF_WIDTH,
+            1e-9,
+        )
     }
 }

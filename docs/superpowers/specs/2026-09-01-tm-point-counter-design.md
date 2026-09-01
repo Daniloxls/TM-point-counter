@@ -95,11 +95,16 @@ hand-maintained as data: a radius-4 hexagon in axial coordinates, giving rows
 of 5-6-7-8-9-8-7-6-5 for 61 hexes. Hex ids have the form `r<row>c<col>`, rows
 1-9 top to bottom and columns 1-N left to right within a row. For each hex the
 geometry gives its axial coordinates, its neighbour list, and the centre of
-the hex in the warped canonical board image, normalised per-axis to 0.0..1.0.
-Because each axis is normalised independently, the width-to-height ratio of
-the centre bounding box is published alongside the geometry so a consumer —
-`:vision`, in particular — can restore true proportions before doing distance
-maths.
+the hex, each axis normalised to 0.0..1.0 against the bounding box of hex
+centres, not the board outline: 0.0 and 1.0 are the centres of the border
+hexes on that axis, half a hex short of the warped canonical board image's
+edges. Because each axis is normalised independently, the width-to-height
+ratio of the centre bounding box is published alongside the geometry so a
+consumer — `:vision`, in particular — can restore true proportions before
+doing distance maths. The half-width and half-height of a hex, in the same
+normalised units, are published too, so `:vision` can size a crop that
+reaches the true board edge at every border hex instead of stopping at the
+centre bounding box.
 
 Per-board data reduces to the set of ocean-reserved hex ids, which the review
 screen uses as a hint and the app uses as a sanity check.
