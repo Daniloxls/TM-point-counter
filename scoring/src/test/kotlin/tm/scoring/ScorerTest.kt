@@ -2,6 +2,7 @@ package tm.scoring
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class ScorerTest {
 
@@ -153,6 +154,20 @@ class ScorerTest {
             ),
         )
         assertEquals(setOf(PlayerColor.BLUE), result.keys)
+    }
+
+    @Test
+    fun `an off-board hex id is rejected rather than silently scored`() {
+        assertFailsWith<IllegalArgumentException> {
+            Scorer.score(board, grid("r99c99" to greenery(PlayerColor.RED)))
+        }
+    }
+
+    @Test
+    fun `an off-board hex id is rejected for a city too`() {
+        assertFailsWith<IllegalArgumentException> {
+            Scorer.score(board, grid("r99c99" to city(PlayerColor.RED)))
+        }
     }
 
     @Test

@@ -12,6 +12,10 @@ data class ScoreBreakdown(val greeneries: Int, val cityPoints: Int) {
 object Scorer {
 
     fun score(board: Board, grid: Grid): Map<PlayerColor, ScoreBreakdown> {
+        require(grid.keys.all { it in board.hexes }) {
+            "grid has hexes not on ${board.id}: ${grid.keys - board.hexes.keys}"
+        }
+
         val greeneries = mutableMapOf<PlayerColor, Int>()
         val cityPoints = mutableMapOf<PlayerColor, Int>()
 
@@ -21,6 +25,9 @@ object Scorer {
                 TileType.GREENERY -> greeneries.merge(owner, 1, Int::plus)
                 TileType.CITY -> {
                     val adjacent = board.neighbors(hexId).count { grid[it]?.type == TileType.GREENERY }
+                    // Guard is load-bearing, not dead weight: merge(owner, 0, ...) would still insert
+                    // owner -> 0, putting a non-scoring player into greeneries.keys + cityPoints.keys
+                    // below and breaking the "only players who scored appear" contract several tests rely on.
                     if (adjacent > 0) cityPoints.merge(owner, adjacent, Int::plus)
                 }
                 TileType.EMPTY, TileType.OCEAN, TileType.SPECIAL -> Unit
