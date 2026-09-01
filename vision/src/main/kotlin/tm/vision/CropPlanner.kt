@@ -28,16 +28,12 @@ object CropPlanner {
         val halfWidthPx = HexGrid.HEX_HALF_WIDTH * (image.xToPx(1.0) - image.xToPx(0.0))
         val halfHeightPx = HexGrid.HEX_HALF_HEIGHT * (image.yToPx(1.0) - image.yToPx(0.0))
 
-        // Find the border hexes
-        val leftmost = board.hexes.values.minBy { it.x }
+        // Find the border hexes to ensure crops fit exactly
         val rightmost = board.hexes.values.maxBy { it.x }
-        val topmost = board.hexes.values.minBy { it.y }
         val bottommost = board.hexes.values.maxBy { it.y }
 
-        // Calculate the left edge of the leftmost crop and the left edge of the rightmost crop
-        val leftCropLeft = (image.xToPx(leftmost.x) - halfWidthPx).roundToInt()
+        // Calculate where the rightmost and bottommost crops will start
         val rightCropLeft = (image.xToPx(rightmost.x) - halfWidthPx).roundToInt()
-        val topCropTop = (image.yToPx(topmost.y) - halfHeightPx).roundToInt()
         val bottomCropTop = (image.yToPx(bottommost.y) - halfHeightPx).roundToInt()
 
         // Derive the crop size once and add it to each rounded origin, so all crops are identical in size
