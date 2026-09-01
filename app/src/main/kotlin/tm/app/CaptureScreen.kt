@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +71,11 @@ fun CaptureScreen(onCaptured: (String) -> Unit, onBack: () -> Unit) {
     }
 
     val imageCapture = remember { ImageCapture.Builder().build() }
+    var boundProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+
+    DisposableEffect(Unit) {
+        onDispose { boundProvider?.unbindAll() }
+    }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -90,6 +96,7 @@ fun CaptureScreen(onCaptured: (String) -> Unit, onBack: () -> Unit) {
                             preview,
                             imageCapture,
                         )
+                        boundProvider = provider
                     }, ContextCompat.getMainExecutor(ctx))
                     previewView
                 },
