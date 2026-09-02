@@ -59,19 +59,23 @@ and it means the model can be trained largely on synthetic data.
    provides the same four-point perspective mapping OpenCV would, so pulling
    in OpenCV's Android distribution — roughly 100MB of native libraries — for
    one function buys nothing.
-4. **Crop.** Hex centres come from the shared board geometry. Each crop is a
-   square region around the centre, resized to 64x64.
+4. **Crop.** Hex centres come from the shared board geometry. `CropPlanner`
+   produces one crop box per hex, hex-proportioned rather than square — 86x100
+   at a `hexCropHeightPx` of 64 — and nothing resizes it. Whatever consumes a
+   crop for classification will have to do its own resize to the model's input
+   size.
 5. **Classify.** A TFLite model labels each crop as one of
    `empty | ocean | greenery | city | special` and returns a confidence.
 6. **Owner colour.** For any non-empty, non-ocean hex, the player cube colour
    is read from an HSV histogram of the crop centre — no model needed. Black
    is identified as low saturation plus low value, which separates it from the
    reddish map surface.
-7. **Review.** The warped image is shown with the classification overlaid.
-   Every hex is tappable and editable. Hexes below a confidence threshold are
-   highlighted so the user's attention goes where it is needed. Special tiles
-   are shown as a single `special` class; if the user needs one identified
-   precisely, they pick it from a list.
+7. **Review.** The warped image is shown above a scrolling list of all 61 hex
+   ids, each row tappable and editable. An overlay of the classification on
+   the image itself, with hexes below a confidence threshold highlighted, is
+   not built yet — it is a genuine future improvement over the list. Special
+   tiles are shown as a single `special` class; if the user needs one
+   identified precisely, they pick it from a list.
 8. **Score.** The confirmed grid is handed to the scoring module, which is
    pure Kotlin and knows nothing about cameras or models.
 
