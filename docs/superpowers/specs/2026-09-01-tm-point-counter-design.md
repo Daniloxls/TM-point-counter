@@ -164,9 +164,9 @@ photos exist, and real photos are only needed for the final fine-tune.
   Plan 3's model exists. Once it does, flag hexes below a threshold on the
   review grid rather than hiding the uncertainty. Today every hex simply
   defaults to `empty` and is set by hand.
-- **Impossible states.** A greenery on an ocean-reserved hex, or a cube colour
-  that matches no player in the game setup, is flagged for confirmation rather
-  than rejected — house rules and worn components exist.
+- **Impossible states.** A greenery on an ocean-reserved hex is flagged for
+  confirmation rather than rejected — house rules and worn components exist.
+  Cube-colour validation against a declared player roster is not built yet.
 - **Wrong board selected.** The user selects the board before capture. No
   automatic board identification in version one.
 - **Camera or model failure.** The review grid is fully usable with everything
