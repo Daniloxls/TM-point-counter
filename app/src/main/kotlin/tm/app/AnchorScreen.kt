@@ -1,6 +1,5 @@
 package tm.app
 
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -25,6 +25,8 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -39,7 +41,18 @@ fun AnchorScreen(
     onPlaced: (List<Pair<Float, Float>>) -> Unit,
     onBack: () -> Unit,
 ) {
-    val bitmap = remember(photoPath) { BitmapFactory.decodeFile(photoPath) }
+    // This screen only ever draws at canvas resolution, so decoding the full
+    // 12MP+ still is wasted memory and time.
+    val configuration = LocalConfiguration.current
+    val density = LocalDensity.current
+    val bitmap = remember(photoPath) {
+        val targetWidth = with(density) { configuration.screenWidthDp.dp.roundToPx() }
+        val targetHeight = with(density) { configuration.screenHeightDp.dp.roundToPx() }
+        decodeSampled(photoPath, targetWidth, targetHeight)
+    }
+    DisposableEffect(bitmap) {
+        onDispose { bitmap?.recycle() }
+    }
 
     if (bitmap == null) {
         Column(modifier = Modifier.fillMaxSize().padding(24.dp)) {

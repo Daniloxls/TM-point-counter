@@ -1,7 +1,6 @@
 package tm.app
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
@@ -28,7 +27,10 @@ object BoardWarper {
         image: CanonicalImage,
     ): Bitmap? {
         require(anchors.size == 4) { "expected 4 anchors, got ${anchors.size}" }
-        val source = BitmapFactory.decodeFile(photoPath) ?: return null
+        // The canonical image is the target resolution; decoding much beyond
+        // that just gets thrown away by the warp, and a downsampled decode is
+        // box-filtered rather than bilinear-scaled, which reads better.
+        val source = decodeSampled(photoPath, image.widthPx * 2, image.heightPx * 2) ?: return null
 
         val sourcePoints = FloatArray(8)
         anchors.forEachIndexed { index, (x, y) ->
