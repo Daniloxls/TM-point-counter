@@ -64,7 +64,13 @@ class MainActivity : ComponentActivity() {
                                 onBack = { state = state.back() },
                             )
                         }
-                        Step.SCORE -> Text("Score — Task 10")
+                        Step.SCORE -> ScoreScreen(
+                            board = state.board!!,
+                            grid = state.grid,
+                            players = state.players,
+                            onBack = { state = state.back() },
+                            onRestart = { state = AppState() },
+                        )
                     }
                 }
             }
