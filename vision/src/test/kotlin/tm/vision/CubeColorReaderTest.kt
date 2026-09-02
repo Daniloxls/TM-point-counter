@@ -80,4 +80,50 @@ class CubeColorReaderTest {
             CubeColorReader.read(IntArray(10), size, size)
         }
     }
+
+    // Finding 1: a uniform tile (no cube at all) must not be reported as a cube
+    // just because it has a dominant hue. The whole crop is one colour here, so
+    // centre and surroundings agree — that is the tile, not a cube.
+
+    @Test
+    fun `does not mistake a uniformly ocean tile for a blue cube`() {
+        assertNull(CubeColorReader.read(IntArray(size * size) { argb(40, 80, 200) }, size, size))
+    }
+
+    @Test
+    fun `does not mistake a uniformly greenery tile for a green cube`() {
+        assertNull(CubeColorReader.read(IntArray(size * size) { argb(50, 170, 70) }, size, size))
+    }
+
+    @Test
+    fun `does not mistake a uniformly dark city tile for a black cube`() {
+        assertNull(CubeColorReader.read(IntArray(size * size) { argb(30, 30, 32) }, size, size))
+    }
+
+    // Finding 2: exercise MIN_SHARE and the sampling window itself, not just
+    // fixtures shaped to hit share 1.0 dead centre.
+
+    @Test
+    fun `reads a cube offset a few pixels from centre`() {
+        // A 6x6 block fully inside the 12..19 sample window but not centred in it.
+        val pixels = IntArray(size * size) { marsSurface }
+        for (y in 14 until 20) for (x in 12 until 18) pixels[y * size + x] = argb(200, 40, 40)
+        assertEquals(PlayerColor.RED, CubeColorReader.read(pixels, size, size))
+    }
+
+    @Test
+    fun `reads a cube covering about 60 percent of the sampled window`() {
+        // Sample window is 8x8 = 64px. An 8x5 block is 40px, 62.5% of it.
+        val pixels = IntArray(size * size) { marsSurface }
+        for (y in 12 until 17) for (x in 12 until 20) pixels[y * size + x] = argb(200, 40, 40)
+        assertEquals(PlayerColor.RED, CubeColorReader.read(pixels, size, size))
+    }
+
+    @Test
+    fun `returns null for a cube covering only about 40 percent of the sampled window`() {
+        // Sample window is 8x8 = 64px. An 8x3 block is 24px, 37.5% of it.
+        val pixels = IntArray(size * size) { marsSurface }
+        for (y in 12 until 15) for (x in 12 until 20) pixels[y * size + x] = argb(200, 40, 40)
+        assertNull(CubeColorReader.read(pixels, size, size))
+    }
 }

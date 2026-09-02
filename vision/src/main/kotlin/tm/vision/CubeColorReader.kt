@@ -7,10 +7,14 @@ import kotlin.math.min
 /**
  * Reads a player cube's colour from one hex crop.
  *
- * Only the middle of the crop is sampled — the cube sits at the centre of the
- * tile and the surrounding art would drown it. Returns null when nothing in
- * that area looks like a cube, which is the right answer for an empty hex, an
- * ocean, or a crop too blurred to call.
+ * The middle of the crop is sampled for a dominant colour — the cube sits at
+ * the centre of the tile. But a dominant centre colour alone is not enough: a
+ * uniform tile (an ocean, a greenery, a dark city) has the same dominant
+ * colour at its centre as at its edges. A cube stands out from its
+ * surroundings, so the outer ring of the crop is sampled too, and the result
+ * is discarded when the ring's dominant colour agrees with the centre's —
+ * that is a uniform tile, not a cube. Returns null for an empty hex, a
+ * uniform tile, or a crop too blurred to call.
  */
 object CubeColorReader {
 
@@ -43,18 +47,25 @@ object CubeColorReader {
         val marginX = ((width * (1 - SAMPLE_FRACTION)) / 2).toInt()
         val marginY = ((height * (1 - SAMPLE_FRACTION)) / 2).toInt()
 
-        val votes = mutableMapOf<PlayerColor, Int>()
-        var sampled = 0
-        for (y in marginY until height - marginY) {
-            for (x in marginX until width - marginX) {
-                sampled++
+        val centreVotes = mutableMapOf<PlayerColor, Int>()
+        val ringVotes = mutableMapOf<PlayerColor, Int>()
+        var centreSampled = 0
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val inCentre = y in marginY until height - marginY && x in marginX until width - marginX
+                val votes = if (inCentre) centreVotes else ringVotes
+                if (inCentre) centreSampled++
                 classify(pixels[y * width + x])?.let { votes.merge(it, 1, Int::plus) }
             }
         }
-        if (sampled == 0) return null
+        if (centreSampled == 0) return null
 
-        val (colour, count) = votes.maxByOrNull { it.value } ?: return null
-        return if (count.toDouble() / sampled >= MIN_SHARE) colour else null
+        val (colour, count) = centreVotes.maxByOrNull { it.value } ?: return null
+        if (count.toDouble() / centreSampled < MIN_SHARE) return null
+
+        // A cube differs from its surroundings; a tile does not.
+        val ringColour = ringVotes.maxByOrNull { it.value }?.key
+        return if (ringColour == colour) null else colour
     }
 
     private fun classify(argb: Int): PlayerColor? {
