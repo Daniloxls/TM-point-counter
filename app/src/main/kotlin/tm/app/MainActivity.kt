@@ -19,8 +19,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.unit.dp
 import tm.scoring.Board
+import tm.vision.CanonicalImage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,7 +42,28 @@ class MainActivity : ComponentActivity() {
                             onPlaced = { state = state.withAnchors(it) },
                             onBack = { state = state.back() },
                         )
-                        Step.REVIEW -> Text("Review — Task 9")
+                        Step.REVIEW -> {
+                            val board = state.board!!
+                            val image = remember { CanonicalImage(hexCropHeightPx = 64) }
+                            val warped = remember(state.photoPath, state.anchors) {
+                                state.photoPath?.let { BoardWarper.warp(it, state.anchors, image) }
+                            }
+                            val suggestions = remember(warped) {
+                                warped?.let {
+                                    BoardWarper.readCubes(it, board, image)
+                                        .associate { read -> read.hexId to read.suggestedOwner }
+                                } ?: emptyMap()
+                            }
+                            ReviewScreen(
+                                board = board,
+                                grid = state.grid,
+                                suggestions = suggestions,
+                                warped = warped?.asImageBitmap(),
+                                onTileChanged = { hexId, tile -> state = state.withTile(hexId, tile) },
+                                onDone = { state = state.toScore() },
+                                onBack = { state = state.back() },
+                            )
+                        }
                         Step.SCORE -> Text("Score — Task 10")
                     }
                 }
