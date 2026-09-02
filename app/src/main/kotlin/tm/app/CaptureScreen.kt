@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.camera.core.Preview
@@ -32,19 +33,20 @@ import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import java.io.File
+
+private fun hasCameraPermission(context: android.content.Context): Boolean =
+    ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
+        PackageManager.PERMISSION_GRANTED
 
 @Composable
 fun CaptureScreen(onCaptured: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    var hasPermission by remember {
-        mutableStateOf(
-            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) ==
-                PackageManager.PERMISSION_GRANTED,
-        )
-    }
+    var hasPermission by remember { mutableStateOf(hasCameraPermission(context)) }
     var error by remember { mutableStateOf<String?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -53,6 +55,19 @@ fun CaptureScreen(onCaptured: (String) -> Unit, onBack: () -> Unit) {
 
     LaunchedEffect(Unit) {
         if (!hasPermission) permissionLauncher.launch(Manifest.permission.CAMERA)
+    }
+
+    // Re-checks on every resume: covers both a permanent denial (the system
+    // dialog never reappears) and a grant made from Settings while this
+    // screen was in the background.
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasPermission = hasCameraPermission(context)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     if (!hasPermission) {
@@ -71,36 +86,44 @@ fun CaptureScreen(onCaptured: (String) -> Unit, onBack: () -> Unit) {
     }
 
     val imageCapture = remember { ImageCapture.Builder().build() }
-    var boundProvider by remember { mutableStateOf<ProcessCameraProvider?>(null) }
+    val previewView = remember { PreviewView(context) }
 
-    DisposableEffect(Unit) {
-        onDispose { boundProvider?.unbindAll() }
+    DisposableEffect(lifecycleOwner) {
+        var disposed = false
+        var boundProvider: ProcessCameraProvider? = null
+        val providerFuture = ProcessCameraProvider.getInstance(context)
+        providerFuture.addListener(
+            {
+                // The screen may already be gone by the time this fires (the
+                // user hit Back during the ~100-300ms this takes) — binding
+                // to a dead lifecycle owner would leave the camera on.
+                if (disposed) return@addListener
+                val provider = providerFuture.get()
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+                provider.unbindAll()
+                provider.bindToLifecycle(
+                    lifecycleOwner,
+                    CameraSelector.DEFAULT_BACK_CAMERA,
+                    preview,
+                    imageCapture,
+                )
+                boundProvider = provider
+            },
+            ContextCompat.getMainExecutor(context),
+        )
+
+        onDispose {
+            disposed = true
+            providerFuture.cancel(false)
+            boundProvider?.unbindAll()
+        }
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            AndroidView(
-                modifier = Modifier.fillMaxSize(),
-                factory = { ctx ->
-                    val previewView = PreviewView(ctx)
-                    val providerFuture = ProcessCameraProvider.getInstance(ctx)
-                    providerFuture.addListener({
-                        val provider = providerFuture.get()
-                        val preview = Preview.Builder().build().also {
-                            it.setSurfaceProvider(previewView.surfaceProvider)
-                        }
-                        provider.unbindAll()
-                        provider.bindToLifecycle(
-                            lifecycleOwner,
-                            androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA,
-                            preview,
-                            imageCapture,
-                        )
-                        boundProvider = provider
-                    }, ContextCompat.getMainExecutor(ctx))
-                    previewView
-                },
-            )
+            AndroidView(modifier = Modifier.fillMaxSize(), factory = { previewView })
         }
 
         error?.let { Text(it, modifier = Modifier.padding(horizontal = 16.dp)) }
