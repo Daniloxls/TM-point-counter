@@ -46,12 +46,19 @@ and it means the model can be trained largely on synthetic data.
 
 1. **Capture.** CameraX still capture. An on-screen guide shows the board
    outline so the user frames roughly square-on.
-2. **Corners.** The user drags four handles onto the corners of the printed
-   map area. Manual by design: it is a few seconds of work, it never fails, and
-   it removes an entire class of detection bug from version one. Automatic
-   corner detection is a later optimisation, not a prerequisite.
-3. **Warp.** OpenCV `getPerspectiveTransform` plus `warpPerspective` produce a
-   canonical top-down image at a fixed resolution.
+2. **Corners.** The user drags four handles onto the centres of the four
+   corner hexes — `r1c1`, `r1c5`, `r9c1`, `r9c5`. The printed map area itself
+   has no crisp corner to aim at, but a corner hex's centre is visually
+   unambiguous, and those four centres form an exact rectangle in board
+   space, which is what makes them a sound basis for the transform. Manual by
+   design: it is a few seconds of work, it never fails, and it removes an
+   entire class of detection bug from version one. Automatic corner detection
+   is a later optimisation, not a prerequisite.
+3. **Warp.** `android.graphics.Matrix.setPolyToPoly` plus `Canvas.drawBitmap`
+   produce a canonical top-down image at a fixed resolution. The platform
+   provides the same four-point perspective mapping OpenCV would, so pulling
+   in OpenCV's Android distribution — roughly 100MB of native libraries — for
+   one function buys nothing.
 4. **Crop.** Hex centres come from the shared board geometry. Each crop is a
    square region around the centre, resized to 64x64.
 5. **Classify.** A TFLite model labels each crop as one of
@@ -68,14 +75,26 @@ and it means the model can be trained largely on synthetic data.
 8. **Score.** The confirmed grid is handed to the scoring module, which is
    pure Kotlin and knows nothing about cameras or models.
 
+Steps 5 and 7's classification and confidence highlighting are not built yet.
+Today, tile type is entered by hand on the review grid: every hex defaults to
+`empty`, and the user taps a hex to set its type from a dialog. Owner colour
+is read automatically, as step 6 describes. Plan 3 — a model that classifies
+tile type from each crop — changes exactly one thing: the `empty` default in
+the review grid becomes a classification with a confidence, and hexes below a
+confidence threshold get highlighted. Capture, anchors, warp, the editable
+grid, and the score screen stay as they are.
+
 ## Modules
 
 ```
 :app        Kotlin, CameraX, Jetpack Compose. Capture, corner drag,
-            review grid, score screen.
-:vision     Warp, crop, TFLite inference, HSV colour reading.
-            Input: bitmap + four corners + board id.
-            Output: List<HexRead(hexId, type, owner, confidence)>.
+            board warp, review grid, score screen.
+:vision     Pure Kotlin. Canonical image sizing, per-hex crop boxes,
+            anchor geometry, HSV colour reading from a pixel buffer.
+            No Android dependencies; anything needing android.graphics,
+            including the warp itself, lives in :app.
+            Input: hex geometry from :scoring, board id, pixel buffers.
+            Output: crop boxes, warp anchor points, player colour reads.
 :scoring    Pure Kotlin, no Android dependencies, no third-party
             dependencies. Computes the shared hex geometry, holds
             per-board ocean-reserved hex ids, and applies the VP rules.
@@ -105,6 +124,12 @@ doing distance maths. The half-width and half-height of a hex, in the same
 normalised units, are published too, so `:vision` can size a crop that
 reaches the true board edge at every border hex instead of stopping at the
 centre bounding box.
+
+The canonical image — the flat, head-on view a photo is warped into — spans
+half a hex beyond the centre bounding box in every direction, so every hex's
+crop box falls inside it with nothing clipped at the border. Its pixel size
+is derived from one parameter, how tall a single hex crop should be, so a
+caller picks image resolution by picking crop quality.
 
 Per-board data reduces to the set of ocean-reserved hex ids, which the review
 screen uses as a hint and the app uses as a sanity check.
@@ -154,8 +179,10 @@ photos exist, and real photos are only needed for the final fine-tune.
   61 hexes, symmetric neighbour relations, no hex claiming itself as a
   neighbour, and centre coordinates inside the unit square, plus a data test
   per board asserting its ocean-reserved ids are real hexes.
-- `:vision` — fixture test over a handful of stored photos with known correct
-  grids, asserting an accuracy floor rather than an exact match.
+- `:vision` — unit tests over the canonical image mapping, the crop plan, the
+  anchor geometry (including the rectangle claim above), and the cube colour
+  reader against synthetic pixel buffers covering each player colour, warm
+  light, and near-misses like shadowed board and Martian soil.
 - Model — a held-out set of real photo crops, reported as a confusion matrix.
   Greenery-versus-special confusion is expected and is the number to watch.
 
