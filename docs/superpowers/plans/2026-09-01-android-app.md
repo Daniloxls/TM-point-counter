@@ -1324,7 +1324,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -1498,7 +1497,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.weight
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -2115,7 +2113,7 @@ Replace `Step.SCORE -> Text("Score — Task 10")` with:
 - [ ] **Step 3: Build and verify end to end**
 
 Run: `./gradlew build`
-Expected: BUILD SUCCESSFUL — `:scoring` 46 tests, `:vision` 30 tests, `:app` 12 tests, one ignored test in `:scoring`.
+Expected: BUILD SUCCESSFUL — `:scoring` 46 tests, `:vision` 30 tests, `:app` 12 tests, none ignored.
 
 On a device, walk the whole flow once: pick Tharsis, take a photo, place the anchors, set a greenery and an adjacent city for two different players, and check the arithmetic by hand against the rules. Report the numbers you saw and the numbers you expected.
 

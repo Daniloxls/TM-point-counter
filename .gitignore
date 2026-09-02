@@ -4,3 +4,7 @@ local.properties
 *.iml
 .idea/
 .superpowers/
+app/build/
+vision/build/
+scoring/build/
+.cxx/
