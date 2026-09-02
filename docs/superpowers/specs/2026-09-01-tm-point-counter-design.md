@@ -158,10 +158,12 @@ photos exist, and real photos are only needed for the final fine-tune.
 
 ## Error handling
 
-- **Bad corner placement.** The warped preview is shown before classification.
-  If it looks wrong, the user redrags. No silent failure.
-- **Low confidence.** Flagged on the review grid rather than hidden. The score
-  screen reports how many hexes were user-corrected.
+- **Bad corner placement.** The warped preview is shown before the grid is
+  filled in. If it looks wrong, the user redrags. No silent failure.
+- **Low confidence.** Not built yet — there is no confidence value until
+  Plan 3's model exists. Once it does, flag hexes below a threshold on the
+  review grid rather than hiding the uncertainty. Today every hex simply
+  defaults to `empty` and is set by hand.
 - **Impossible states.** A greenery on an ocean-reserved hex, or a cube colour
   that matches no player in the game setup, is flagged for confirmation rather
   than rejected — house rules and worn components exist.
